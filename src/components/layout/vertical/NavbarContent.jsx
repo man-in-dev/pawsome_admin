@@ -88,6 +88,8 @@ import IconButton from '@mui/material/IconButton'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ArrowCircleLeftOutlinedIcon from '@mui/icons-material/ArrowCircleLeftOutlined'
 
+import { usePathname } from 'next/navigation'
+
 import { verticalLayoutClasses } from '@layouts/utils/layoutClasses'
 
 const NavbarContent = () => {
@@ -97,11 +99,12 @@ const NavbarContent = () => {
   const [dateTime, setDateTime] = useState(null)
   const intervalRef = useRef(null)
 
+  const pathname = usePathname()
+
   useEffect(() => {
-    const pathname = window.location.pathname
     const titleValue = pathname === '/' ? 'Home' : decodeURIComponent(pathname.substring(1))
     setTitle(titleValue)
-  }, [window.location.pathname])
+  }, [pathname])
 
   useEffect(() => {
     try {

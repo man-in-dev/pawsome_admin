@@ -309,7 +309,7 @@ const DeliveryPage = () => {
           </TableBody>
         </Table>
         <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
+          rowsPerPageOptions={[5, 10, 25, 50, 75, 100, 125, 150, 175, 200]}
           component='div'
           count={diseases.length}
           page={page}
