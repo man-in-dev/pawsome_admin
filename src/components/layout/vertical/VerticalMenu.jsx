@@ -42,7 +42,8 @@ import {
   ManageHistorySharp,
   TempleBuddhist,
   Report,
-  BrandingWatermark
+  BrandingWatermark,
+  ContentCut
 } from '@mui/icons-material'
 
 // Third-party Imports
@@ -85,7 +86,36 @@ const VerticalMenu = ({ scrollMenu }) => {
 
   useEffect(() => {
     const savedPermissions = JSON.parse(localStorage.getItem('permissions')) || []
-    setPermissions(savedPermissions)
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+    const isSuperAdmin = storedUser?.role === 'superadmin'
+
+    // Ensure Groom Profile and Grooming appear after Vet Profile
+    const enhancedPermissions = []
+    if (Array.isArray(savedPermissions)) {
+      savedPermissions.forEach(perm => {
+        enhancedPermissions.push(perm)
+        if (perm === 'vet') {
+          if (!savedPermissions.includes('Groom Profile')) {
+            enhancedPermissions.push('Groom Profile')
+          }
+          if (!savedPermissions.includes('Grooming')) {
+            enhancedPermissions.push('Grooming')
+          }
+        }
+      })
+    }
+
+    // Handle superadmin if not already added
+    if (isSuperAdmin) {
+      if (!enhancedPermissions.includes('Groom Profile')) {
+        enhancedPermissions.push('Groom Profile')
+      }
+      if (!enhancedPermissions.includes('Grooming')) {
+        enhancedPermissions.push('Grooming')
+      }
+    }
+
+    setPermissions(Array.from(new Set(enhancedPermissions)))
   }, [])
 
   // Map permissions to menu items
@@ -149,6 +179,8 @@ const VerticalMenu = ({ scrollMenu }) => {
     banner: { href: '/banner', icon: <Wallpaper />, label: 'Banner' },
     hospital: { href: '/hospital', icon: <LocalHospital />, label: 'Hospital Profile' },
     vet: { href: '/vet', icon: <MedicalServices />, label: ' Vets Profile' },
+    'Groom Profile': { href: '/grooming', icon: <MedicalServices />, label: 'Groom Profile' },
+
     'Payments Management': { href: '/subcategory', icon: <Create />, label: 'Payments Management' },
     Appointments: {
       icon: <Create />,
@@ -156,7 +188,9 @@ const VerticalMenu = ({ scrollMenu }) => {
       children: [
         { href: '/appointments/clinic', label: 'Clinic', icon: <OtherHouses /> },
         { href: '/appointments/house', label: 'In-house', icon: <House /> },
-        { href: '/package', icon: <Collections />, label: 'Package' }
+        { href: '/appointments/groom', label: 'Groom', icon: <ContentCut /> },
+        { href: '/package', icon: <Collections />, label: 'Package' },
+      
       ]
     },
     reports: { href: '/reportuser', label: 'Reports', icon: <Report /> }
@@ -166,13 +200,13 @@ const VerticalMenu = ({ scrollMenu }) => {
     <ScrollWrapper
       {...(isBreakpointReached
         ? {
-            className: 'bs-full overflow-y-auto overflow-x-hidden',
-            onScroll: container => scrollMenu(container, false)
-          }
+          className: 'bs-full overflow-y-auto overflow-x-hidden',
+          onScroll: container => scrollMenu(container, false)
+        }
         : {
-            options: { wheelPropagation: false, suppressScrollX: true },
-            onScrollY: container => scrollMenu(container, true)
-          })}
+          options: { wheelPropagation: false, suppressScrollX: true },
+          onScrollY: container => scrollMenu(container, true)
+        })}
     >
       <Menu
         popoutMenuOffset={{ mainAxis: 23 }}

@@ -100,6 +100,27 @@ export const uploadImage = data => axios('2000', 'document', '/file/upload', 'PO
 export const editHospital = (id, data) => axios('2003', 'veterinary', `admin/clinic/${id}`, 'PUT', data)
 export const deleteClinic = id => axios('2003', 'veterinary', `admin/clinic/delete/${id}`, 'DELETE')
 
+// api for grooming store managment
+export const createGroomingStore = data => axios('4001', 'grooming', 'admin/store', 'POST', data)
+export const getAllGroomingStores = data => axios('4001', 'grooming', 'admin/store', 'GET', data)
+export const editGroomingStore = (id, data) => axios('4001', 'grooming', `admin/store/${id}`, 'PUT', data)
+export const deleteGroomingStore = id => axios('4001', 'grooming', `admin/store/delete/${id}`, 'DELETE')
+export const getAllGroomingAppointments = data => axios('4001', 'grooming', 'admin/appointment', 'GET', data)
+export const updateGroomingAppointment = (id, data) => axios('4001', 'grooming', `admin/appointment/${id}`, 'PUT', data)
+export const deleteGroomingAppointment = id => axios('4001', 'grooming', `admin/appointment/${id}`, 'DELETE')
+
+// api for grooming packages (house consultations)
+export const getAllGroomingPackages = data => axios('4001', 'grooming', 'admin/package/allpackage', 'GET', data)
+export const createGroomingPackage = data => axios('4001', 'grooming', 'admin/package/createPackage', 'POST', data)
+export const updateGroomingPackage = (id, data) => axios('4001', 'grooming', `admin/package/updatePackage/${id}`, 'PUT', data)
+export const deleteGroomingPackage = id => axios('4001', 'grooming', `admin/package/packageDelete/${id}`, 'DELETE')
+
+// api for groomer management
+export const createGroomer = data => axios('4001', 'grooming', 'admin/groomer', 'POST', data)
+export const getAllGroomers = () => axios('4001', 'grooming', 'admin/groomer', 'GET')
+export const editGroomer = (data, id) => axios('4001', 'grooming', `admin/groomer/${id}`, 'PUT', data)
+export const deleteGroomer = id => axios('4001', 'grooming', `admin/groomer/delete/${id}`, 'DELETE')
+
 //api for vet managment
 
 export const createVet = data => axios('2003', 'veterinary', 'admin/vet', 'POST', data)
