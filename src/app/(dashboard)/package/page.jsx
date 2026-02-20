@@ -50,7 +50,8 @@ const FullWidthCouponTable = () => {
     goldPrice: '',
     silverPrice: '',
     benefits: '',
-    images: []
+    images: [],
+    serviceType: 'veterinary'
   })
   const [isEditing, setIsEditing] = useState(false)
   const [allPackages, setAllPackages] = useState([])
@@ -102,10 +103,10 @@ const FullWidthCouponTable = () => {
     setCurrentPackage(
       pkg
         ? {
-            ...pkg,
-            benefits: pkg.benefits.join(', ')
-          }
-        : { id: null, name: '', price: '', regularPrice: '', goldPrice: '', silverPrice: '', benefits: '', images: [] }
+          ...pkg,
+          benefits: pkg.benefits.join(', ')
+        }
+        : { id: null, name: '', price: '', regularPrice: '', goldPrice: '', silverPrice: '', benefits: '', images: [], serviceType: 'veterinary' }
     )
     setMediaUrl(pkg ? pkg.images[0] : null)
     setIsEditing(!!pkg)
@@ -122,7 +123,8 @@ const FullWidthCouponTable = () => {
       goldPrice: '',
       silverPrice: '',
       benefits: '',
-      images: []
+      images: [],
+      serviceType: 'veterinary'
     })
     setErrors({ name: '', price: '', regularPrice: '', goldPrice: '', silverPrice: '', benefits: '' })
     setMediaUrl(null)
@@ -203,7 +205,8 @@ const FullWidthCouponTable = () => {
         .split(',')
         .map(b => b.trim())
         .filter(b => b),
-      images: mediaUrl ? [mediaUrl] : []
+      images: mediaUrl ? [mediaUrl] : [],
+      serviceType: currentPackage.serviceType
     }
 
     try {
@@ -308,6 +311,7 @@ const FullWidthCouponTable = () => {
               <TableCell sx={{ fontWeight: 'bold' }}> Regular Price</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>Gold Price</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>Silver Price</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Service</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>Benefits</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
             </TableRow>
@@ -338,6 +342,7 @@ const FullWidthCouponTable = () => {
                   <TableCell>{pkg.regularPrice}</TableCell>
                   <TableCell>{pkg.goldPrice}</TableCell>
                   <TableCell>{pkg.silverPrice}</TableCell>
+                  <TableCell sx={{ textTransform: 'capitalize' }}>{pkg.serviceType}</TableCell>
                   <TableCell>
                     <ul style={{ paddingLeft: 20, listStyleType: 'disc', margin: 0 }}>
                       {pkg.benefits.map((benefit, i) => (
@@ -484,6 +489,21 @@ const FullWidthCouponTable = () => {
             error={!!errors.benefits}
             helperText={errors.benefits}
           />
+
+          <TextField
+            select
+            label='Service Type'
+            fullWidth
+            margin='normal'
+            value={currentPackage.serviceType}
+            onChange={e => handleFieldChange('serviceType', e.target.value)}
+            SelectProps={{
+              native: true
+            }}
+          >
+            <option value='veterinary'>Veterinary</option>
+            <option value='grooming'>Grooming</option>
+          </TextField>
 
           <Button onClick={handleSavePackage} variant='contained' fullWidth sx={{ mt: 3, backgroundColor: '#FFA500' }}>
             {isEditing ? 'Update Package' : 'Create Package'}

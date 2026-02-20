@@ -186,11 +186,9 @@ const VerticalMenu = ({ scrollMenu }) => {
       icon: <Create />,
       label: 'Appointments',
       children: [
-        { href: '/appointments/clinic', label: 'Clinic', icon: <OtherHouses /> },
+        { href: '/appointments/clinic', label: 'Clinic & Groom', icon: <OtherHouses /> },
         { href: '/appointments/house', label: 'In-house', icon: <House /> },
-        { href: '/appointments/groom', label: 'Groom', icon: <ContentCut /> },
         { href: '/package', icon: <Collections />, label: 'Package' },
-      
       ]
     },
     reports: { href: '/reportuser', label: 'Reports', icon: <Report /> }
