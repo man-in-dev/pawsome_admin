@@ -102,6 +102,14 @@ const VerticalMenu = ({ scrollMenu }) => {
             enhancedPermissions.push('Grooming')
           }
         }
+        if (perm === 'hospital') {
+          if (!savedPermissions.includes('Boarding Centers')) {
+            enhancedPermissions.push('Boarding Centers')
+          }
+          if (!savedPermissions.includes('Boarding Caretakers')) {
+            enhancedPermissions.push('Boarding Caretakers')
+          }
+        }
       })
     }
 
@@ -112,6 +120,12 @@ const VerticalMenu = ({ scrollMenu }) => {
       }
       if (!enhancedPermissions.includes('Grooming')) {
         enhancedPermissions.push('Grooming')
+      }
+      if (!enhancedPermissions.includes('Boarding Centers')) {
+        enhancedPermissions.push('Boarding Centers')
+      }
+      if (!enhancedPermissions.includes('Boarding Caretakers')) {
+        enhancedPermissions.push('Boarding Caretakers')
       }
     }
 
@@ -180,6 +194,8 @@ const VerticalMenu = ({ scrollMenu }) => {
     hospital: { href: '/hospital', icon: <LocalHospital />, label: 'Hospital Profile' },
     vet: { href: '/vet', icon: <MedicalServices />, label: ' Vets Profile' },
     'Groom Profile': { href: '/grooming', icon: <MedicalServices />, label: 'Groom Profile' },
+    'Boarding Centers': { href: '/boarding-facility', icon: <OtherHouses />, label: 'Boarding Centers' },
+    'Boarding Caretakers': { href: '/boarding-caretaker', icon: <Groups />, label: 'Boarding Caretakers' },
 
     'Payments Management': { href: '/subcategory', icon: <Create />, label: 'Payments Management' },
     Appointments: {
@@ -187,6 +203,7 @@ const VerticalMenu = ({ scrollMenu }) => {
       label: 'Appointments',
       children: [
         { href: '/appointments/clinic', label: 'Clinic & Groom', icon: <OtherHouses /> },
+        { href: '/appointments/boarding', label: 'Boarding', icon: <OtherHouses /> },
         { href: '/appointments/house', label: 'In-house', icon: <House /> },
         { href: '/package', icon: <Collections />, label: 'Package' },
       ]

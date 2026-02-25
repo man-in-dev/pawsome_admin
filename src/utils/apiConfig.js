@@ -13,17 +13,18 @@ const SERVICE_PORTS = {
   subscription: 2008,
   settings: 2009,
   notification: 2010,
-  grooming: 4001
+  grooming: 4001,
+  boarding: 4002
 }
 
 // Development mode - use localhost
 // Set NODE_ENV=development or NEXT_PUBLIC_ENV=development to enable dev mode
-const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' || 
-                       process.env.NEXT_PUBLIC_ENV === 'development' ||
-                       !process.env.NEXT_PUBLIC_ENV // Default to development if not set
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' ||
+  process.env.NEXT_PUBLIC_ENV === 'development' ||
+  !process.env.NEXT_PUBLIC_ENV // Default to development if not set
 
 // Base URL configuration
-const BASE_URL = IS_DEVELOPMENT 
+const BASE_URL = IS_DEVELOPMENT
   ? 'http://localhost'  // Development - use localhost
   : 'https://api.pawsomeindia.com'  // Production
 
