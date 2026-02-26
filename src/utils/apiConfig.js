@@ -24,16 +24,18 @@ const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' ||
   !process.env.NEXT_PUBLIC_ENV // Default to development if not set
 
 // Base URL configuration
-const BASE_URL = IS_DEVELOPMENT
-  ? 'http://localhost'  // Development - use localhost
-  : 'https://api.pawsomeindia.com'  // Production
+const BASE_URL = 'https://api.pawsomeindia.com'  // Production
+
+
+  //  IS_DEVELOPMENT
+  // ? 'http://localhost'
 
 // Get API URL for a service
 export const getApiUrl = (port, service) => {
-  if (IS_DEVELOPMENT) {
-    // Use the port parameter for localhost
-    return `http://localhost:${port}/${service}/api/v1`
-  }
+  // if (IS_DEVELOPMENT) {
+  //   // Use the port parameter for localhost
+  //   return `http://localhost:${port}/${service}/api/v1`
+  // }
   // Production uses the service name in URL
   return `${BASE_URL}/${service}/api/v1`
 }
