@@ -26,7 +26,9 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  DialogContentText
+  DialogContentText,
+  Tabs,
+  Tab
 } from '@mui/material'
 
 import { HouseSharp } from '@mui/icons-material'
@@ -40,8 +42,11 @@ import {
   amountPaidVetSpot,
   getAllAppointmentsHouse,
   getAllVets,
+  getAllGroomingAppointments,
+  getAllGroomers,
   updateAppointment,
-  updateAppointmentStatus
+  updateAppointmentStatus,
+  updateGroomingAppointment
 } from '@/app/api'
 
 const InHouseAppointmentPage = () => {
@@ -49,15 +54,17 @@ const InHouseAppointmentPage = () => {
   const [filteredAppointments, setFilteredAppointments] = useState([]) // For filtered results
   const [searchQuery, setSearchQuery] = useState('') // Search query state
   const [statusValues, setStatusValues] = useState({})
-  const [vets, setVets] = useState([])
-  const [loadingVets, setLoadingVets] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [vets, setVets] = useState([])
+  const [groomers, setGroomers] = useState([])
+  const [loadingProfessionals, setLoadingProfessionals] = useState(false)
   const [clicked, setClicked] = useState(false)
   const [comment, setComment] = useState('')
 
   const [openNoteModal, setOpenNoteModal] = useState(false)
   const [noteValue, setNoteValue] = useState('')
   const [selectedAppointment, setSelectedAppointment] = useState(null)
+  const [activeTab, setActiveTab] = useState('veterinary')
 
   // Animated Placeholder Data
   const [animateData] = useState(['Search users', 'Search pets'])
@@ -91,12 +98,40 @@ const InHouseAppointmentPage = () => {
   const fetchInHouseAppointments = async () => {
     setLoading(true)
     try {
-      const response = await getAllAppointmentsHouse()
-      const appointmentData = response?.data?.data || []
-      setAppointments(appointmentData)
-      setFilteredAppointments(appointmentData) // Initialize filtered appointments
+      const [vetResponse, groomingResponse] = await Promise.all([
+        getAllAppointmentsHouse(),
+        getAllGroomingAppointments({ type: 'home' })
+      ])
+
+      const vetData = (vetResponse?.data?.data || []).map(app => ({
+        ...app,
+        backend: 'veterinary'
+      }))
+
+      const groomingData = (groomingResponse?.data?.data || [])
+        .filter(app => app.type === 'home')
+        .map(app => ({
+          ...app,
+          backend: 'grooming'
+        }))
+
+      const mergedData = [...vetData, ...groomingData]
+        .map(app => {
+          let derivedServiceType = app.backend // Default to origin backend
+          if (app.Package?.serviceType) {
+            derivedServiceType = app.Package.serviceType
+          } else if (app.GroomingPackage) {
+            derivedServiceType = 'grooming'
+          }
+          return { ...app, serviceType: derivedServiceType }
+        })
+        .sort((a, b) => new Date(b.datetimeSlot) - new Date(a.datetimeSlot))
+
+      setAppointments(mergedData)
+      setFilteredAppointments(mergedData)
     } catch (error) {
       console.error('Error fetching in-house appointments:', error)
+      toast.error('Failed to fetch appointments')
     } finally {
       setLoading(false)
     }
@@ -107,47 +142,71 @@ const InHouseAppointmentPage = () => {
     }, 3000)
     return () => clearInterval(interval)
   }, [animateData])
-  const fetchAllVets = async () => {
-    setLoadingVets(true)
+  const fetchAllProfessionals = async () => {
+    setLoadingProfessionals(true)
     try {
-      const response = await getAllVets()
-      setVets(response?.data?.data || [])
+      const [vetRes, groomRes] = await Promise.all([
+        getAllVets(),
+        getAllGroomers()
+      ])
+      setVets(vetRes?.data?.data || [])
+      setGroomers(groomRes?.data?.data || [])
     } catch (error) {
-      console.error('Error fetching vets:', error)
+      console.error('Error fetching professionals:', error)
     } finally {
-      setLoadingVets(false)
+      setLoadingProfessionals(false)
     }
   }
 
-  const handleSearch = event => {
-    const query = event.target.value.toLowerCase()
-    setSearchQuery(query)
+  useEffect(() => {
+    const query = searchQuery.toLowerCase()
+    const filtered = appointments.filter(appointment => {
+      const matchesSearch =
+        appointment.User?.name?.toLowerCase().includes(query) ||
+        appointment.Pet?.name?.toLowerCase().includes(query) ||
+        appointment.Address?.streetName?.toLowerCase().includes(query) ||
+        appointment.User?.email?.toLowerCase().includes(query) ||
+        appointment.User?.phone?.toLowerCase().includes(query)
 
-    const filtered = appointments.filter(
-      appointment =>
-        appointment.User.name.toLowerCase().includes(query) || // Search by user name
-        appointment.Pet.name.toLowerCase().includes(query) || // Search by pet name
-        appointment.Address?.streetName.toLowerCase().includes(query) // Search by address
-    )
+      const matchesTab = appointment.serviceType === activeTab
+
+      return matchesSearch && matchesTab
+    })
     setFilteredAppointments(filtered)
-    setPage(0) // Reset to first page after search
+    setPage(0)
+  }, [searchQuery, activeTab, appointments])
+
+  const handleSearch = event => {
+    setSearchQuery(event.target.value)
   }
 
-  const handleVetChange = async (appointmentId, vetId) => {
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue)
+  }
+
+  const handleProfessionalChange = async (appointment, profId) => {
     setLoading(true)
     try {
-      await updateAppointment(appointmentId, { vetId })
+      if (appointment.serviceType === 'grooming') {
+        const payload = appointment.backend === 'veterinary' ? { vetId: profId } : { groomerId: profId }
+        appointment.backend === 'veterinary'
+          ? await updateAppointment(appointment.id, payload)
+          : await updateGroomingAppointment(appointment.id, payload)
+      } else {
+        await updateAppointment(appointment.id, { vetId: profId })
+      }
       fetchInHouseAppointments()
-      toast.success('Vet assignment updated successfully!')
+      toast.success('Professional assignment updated successfully!')
     } catch (error) {
-      console.error('Error updating vet assignment:', error)
-      toast.error('Failed to update vet assignment.')
+      console.error('Error updating professional assignment:', error)
+      toast.error('Failed to update assignment.')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleStatusChange = async (id, value) => {
+  const handleStatusChange = async (appointment, value) => {
+    const id = appointment.id
     if (!value) {
       toast.error('Status is required')
       return
@@ -158,8 +217,11 @@ const InHouseAppointmentPage = () => {
     }
     setLoading(true)
     try {
-      const response = await updateAppointmentStatus(payload)
-      if (response?.status === 200 && response.data?.success) {
+      const response = appointment?.backend === 'grooming'
+        ? await updateGroomingAppointment(id, payload)
+        : await updateAppointmentStatus(payload)
+
+      if (response?.status === 200 && (response.data?.success || response.status === 200)) {
         toast.success('Appointment status updated successfully')
         setStatusValues(prev => ({ ...prev, [id]: value }))
         fetchInHouseAppointments()
@@ -176,7 +238,7 @@ const InHouseAppointmentPage = () => {
 
   useEffect(() => {
     fetchInHouseAppointments()
-    fetchAllVets()
+    fetchAllProfessionals()
   }, [])
 
   // Pagination handlers
@@ -193,22 +255,22 @@ const InHouseAppointmentPage = () => {
   const handleOpenVetPaymentEditModal = appointment => {
     setSelectedAppointmentForVetPaymentEdit(appointment)
     setVetPaymentEditValues({
-      amountPaidVet: appointment.AmountPaidVet || '',
-      amountPaidVetSpot: appointment.AmountPaidVetSpot || ''
+      amountPaid: appointment.serviceType === 'grooming' ? appointment.AmountPaid || '' : appointment.AmountPaidToVet || '',
+      amountPaidSpot: appointment.serviceType === 'grooming' ? appointment.AmountPaidOnSpot || '' : appointment.AmountPaidOnSoptVet || ''
     })
     setOpenVetPaymentEditModal(true)
   }
   const handleCloseVetPaymentEditModal = () => {
     setOpenVetPaymentEditModal(false)
     setSelectedAppointmentForVetPaymentEdit(null)
-    setVetPaymentEditValues({ amountPaidVet: '', amountPaidVetSpot: '' })
+    setVetPaymentEditValues({ amountPaid: '', amountPaidSpot: '' })
   }
 
-  // Update Amount Paid Vet independently
-  const handleUpdateAmountPaidVetModal = async () => {
-    const amount = vetPaymentEditValues.amountPaidVet
+  // Update Amount Paid independently
+  const handleUpdateAmountPaidModal = async () => {
+    const amount = vetPaymentEditValues.amountPaid
     if (amount === '' || isNaN(amount)) {
-      toast.error('Enter a valid Amount Paid Vet')
+      toast.error('Enter a valid amount')
       return
     }
     try {
@@ -217,26 +279,34 @@ const InHouseAppointmentPage = () => {
         appointmentId: selectedAppointmentForVetPaymentEdit.id,
         amount: Number(amount)
       }
-      const response = await amountPaidVet(payload)
-      if (response?.status === 200 && response.data?.success) {
-        toast.success('Amount Paid Vet updated successfully')
-        fetchInHouseAppointments()
+
+      let response
+      if (selectedAppointmentForVetPaymentEdit.serviceType === 'grooming') {
+        response = await updateGroomingAppointment(selectedAppointmentForVetPaymentEdit.id, { AmountPaid: Number(amount) })
       } else {
-        toast.error(response?.data?.message || 'Failed to update Amount Paid Vet')
+        response = await amountPaidVet(payload)
+      }
+
+      if (response?.status === 200 && (response.data?.success || response.status === 200)) {
+        toast.success('Amount Paid updated successfully')
+        fetchInHouseAppointments()
+        handleCloseVetPaymentEditModal()
+      } else {
+        toast.error(response?.data?.message || 'Failed to update Amount Paid')
       }
     } catch (error) {
-      console.error('Error updating Amount Paid Vet:', error)
-      toast.error('An error occurred while updating Amount Paid Vet')
+      console.error('Error updating Amount Paid:', error)
+      toast.error('An error occurred while updating Amount Paid')
     } finally {
       setLoading(false)
     }
   }
 
-  // Update Amount On Sopt Paid Vet independently
-  const handleUpdateAmountVetSpotModal = async () => {
-    const amount = vetPaymentEditValues.amountPaidVetSpot
+  // Update Amount On Spot Paid independently
+  const handleUpdateAmountSpotModal = async () => {
+    const amount = vetPaymentEditValues.amountPaidSpot
     if (amount === '' || isNaN(amount)) {
-      toast.error('Enter a valid Amount On Spot Paid Vet')
+      toast.error('Enter a valid amount on spot')
       return
     }
     try {
@@ -245,16 +315,24 @@ const InHouseAppointmentPage = () => {
         appointmentId: selectedAppointmentForVetPaymentEdit.id,
         amount: Number(amount)
       }
-      const response = await amountPaidVetSpot(payload)
-      if (response?.status === 200 && response.data?.success) {
-        toast.success('Amount On Spot Paid Vet updated successfully')
-        fetchInHouseAppointments()
+
+      let response
+      if (selectedAppointmentForVetPaymentEdit.serviceType === 'grooming') {
+        response = await updateGroomingAppointment(selectedAppointmentForVetPaymentEdit.id, { AmountPaidOnSpot: Number(amount) })
       } else {
-        toast.error(response?.data?.message || 'Failed to update Amount On Spot Paid Vet')
+        response = await amountPaidVetSpot(payload)
+      }
+
+      if (response?.status === 200 && (response.data?.success || response.status === 200)) {
+        toast.success('Amount On Spot Paid updated successfully')
+        fetchInHouseAppointments()
+        handleCloseVetPaymentEditModal()
+      } else {
+        toast.error(response?.data?.message || 'Failed to update Amount On Spot Paid')
       }
     } catch (error) {
-      console.error('Error updating Amount On Spot Paid Vet:', error)
-      toast.error('An error occurred while updating Amount On Spot Paid Vet')
+      console.error('Error updating Amount On Spot Paid:', error)
+      toast.error('An error occurred while updating Amount On Spot Paid')
     } finally {
       setLoading(false)
     }
@@ -337,6 +415,11 @@ const InHouseAppointmentPage = () => {
 
         <ToastContainer position='top-right' autoClose={3000} />
 
+        <Tabs value={activeTab} onChange={handleTabChange} sx={{ marginBottom: 2 }} indicatorColor='primary' textColor='primary'>
+          <Tab label='Vet In-house' value='veterinary' />
+          <Tab label='Groom In-house' value='grooming' />
+        </Tabs>
+
         {/* Search Bar */}
         <TextField
           onClick={() => {
@@ -401,12 +484,12 @@ const InHouseAppointmentPage = () => {
                 <TableCell>Booking Reason</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Package</TableCell>
-                <TableCell>Assigned Vet</TableCell>
-                <TableCell>Assign Vet</TableCell>
+                <TableCell>Assigned Professional</TableCell>
+                <TableCell>Assign Professional</TableCell>
                 <TableCell>Payment</TableCell>
                 <TableCell>Address</TableCell>
                 <TableCell>Datetime Slot</TableCell>
-                <TableCell>Amount paid to Vet</TableCell>
+                <TableCell>{activeTab === 'grooming' ? 'Amount paid to Groomer' : 'Amount paid to Vet'}</TableCell>
                 <TableCell>Comments</TableCell>
                 <TableCell>Action</TableCell>
                 {/* <TableCell>Notes</TableCell> */}
@@ -462,7 +545,7 @@ const InHouseAppointmentPage = () => {
                     <TableCell>
                       <Select
                         value={statusValues[appointment.id] || appointment.status}
-                        onChange={e => handleStatusChange(appointment.id, e.target.value)}
+                        onChange={e => handleStatusChange(appointment, e.target.value)}
                         sx={{ paddingRight: '15px !important' }}
                       >
                         <MenuItem value='pending'>Pending</MenuItem>
@@ -477,23 +560,50 @@ const InHouseAppointmentPage = () => {
                           <Typography>{appointment?.Package?.name}</Typography>
                           <Typography variant='caption'>Price: {appointment?.Package?.regularPrice}</Typography>
                         </Box>
+                      ) : appointment?.GroomingPackage ? (
+                        <Box>
+                          <Typography>{appointment?.GroomingPackage?.name}</Typography>
+                          <Typography variant='caption'>Price: {appointment?.GroomingPackage?.regularPrice}</Typography>
+                        </Box>
                       ) : (
                         'No Package'
                       )}
                     </TableCell>
                     <TableCell>
-                      <Typography>{appointment.Vet ? appointment.Vet.name : 'No Vet Assigned'}</Typography>
+                      <Typography>
+                        {appointment.serviceType === 'grooming'
+                          ? appointment.Groomer
+                            ? appointment.Groomer.name
+                            : groomers.find(g => g.id === (appointment.groomerId || appointment.vetId))?.name || 'No Groomer Assigned'
+                          : appointment.Vet
+                            ? appointment.Vet.name
+                            : vets.find(v => v.id === appointment.vetId)?.name || 'No Vet Assigned'}
+                      </Typography>
                     </TableCell>
                     <TableCell>
-                      {loadingVets ? (
+                      {loadingProfessionals ? (
                         <CircularProgress size={24} />
                       ) : (
                         <Select
                           sx={{ paddingRight: '15px !important' }}
-                          value={appointment.vetId || ''}
-                          onChange={e => handleVetChange(appointment.id, e.target.value)}
+                          value={
+                            appointment.serviceType === 'grooming'
+                              ? appointment.groomerId || ''
+                              : appointment.vetId || ''
+                          }
+                          onChange={e => handleProfessionalChange(appointment, e.target.value)}
                         >
-                          {vets.length > 0 ? (
+                          {appointment.serviceType === 'grooming' ? (
+                            groomers.length > 0 ? (
+                              groomers.map(groomer => (
+                                <MenuItem key={groomer.id} value={groomer.id}>
+                                  {groomer.name}
+                                </MenuItem>
+                              ))
+                            ) : (
+                              <MenuItem value=''>No Groomers Available</MenuItem>
+                            )
+                          ) : vets.length > 0 ? (
                             vets.map(vet => (
                               <MenuItem key={vet.id} value={vet.id}>
                                 {vet.name}
@@ -535,17 +645,30 @@ const InHouseAppointmentPage = () => {
 
                     <TableCell>
                       <Box>
-                        <Typography variant='body2'>Amount Paid Vet: {appointment.AmountPaidVet || 0}</Typography>
-                        <Typography variant='body2'>
-                          Amount On Spot Paid Vet: {appointment.AmountPaidVetSpot || 0}
-                        </Typography>
+                        {appointment.serviceType === 'grooming' ? (
+                          <>
+                            <Typography variant='body2'>
+                              Amount Paid: {appointment.AmountPaid || 0}
+                            </Typography>
+                            <Typography variant='body2'>
+                              Amount On Spot Paid: {appointment.AmountPaidOnSpot || 0}
+                            </Typography>
+                          </>
+                        ) : (
+                          <>
+                            <Typography variant='body2'>Amount Paid Vet: {appointment.AmountPaidToVet || 0}</Typography>
+                            <Typography variant='body2'>
+                              Amount On Spot Paid Vet: {appointment.AmountPaidOnSoptVet || 0}
+                            </Typography>
+                          </>
+                        )}
                         <Button
                           variant='outlined'
                           size='small'
                           onClick={() => handleOpenVetPaymentEditModal(appointment)}
                           sx={{ mt: 1 }}
                         >
-                          Edit Vet Payment
+                          Edit {appointment.serviceType === 'grooming' ? 'Groomer' : 'Vet'} Payment
                         </Button>
                       </Box>
                     </TableCell>
@@ -567,7 +690,7 @@ const InHouseAppointmentPage = () => {
               )}
             </TableBody>
           </Table>
-        </TableContainer>
+        </TableContainer >
 
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
@@ -578,7 +701,7 @@ const InHouseAppointmentPage = () => {
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
-      </Box>
+      </Box >
 
       <Dialog open={openPaymentModal} onClose={handleClosePaymentModal} maxWidth='sm' fullWidth>
         <DialogTitle>Payment Details</DialogTitle>
@@ -659,24 +782,24 @@ const InHouseAppointmentPage = () => {
       </Dialog>
 
       <Dialog open={openVetPaymentEditModal} onClose={handleCloseVetPaymentEditModal} maxWidth='sm' fullWidth>
-        <DialogTitle>Edit Vet Payment Amounts</DialogTitle>
+        <DialogTitle>Edit {selectedAppointmentForVetPaymentEdit?.serviceType === 'grooming' ? 'Groomer' : 'Vet'} Payment Amounts</DialogTitle>
         <DialogContent>
           <TextField
-            label='Amount Paid Vet'
+            label={selectedAppointmentForVetPaymentEdit?.serviceType === 'grooming' ? 'Amount Paid Groomer' : 'Amount Paid Vet'}
             fullWidth
             type='number'
             variant='outlined'
-            value={vetPaymentEditValues.amountPaidVet}
-            onChange={e => setVetPaymentEditValues(prev => ({ ...prev, amountPaidVet: e.target.value }))}
+            value={vetPaymentEditValues.amountPaid}
+            onChange={e => setVetPaymentEditValues(prev => ({ ...prev, amountPaid: e.target.value }))}
             sx={{ mt: 2 }}
           />
           <TextField
-            label='Amount On Spot Paid Vet'
+            label={selectedAppointmentForVetPaymentEdit?.serviceType === 'grooming' ? 'Amount On Spot Paid Groomer' : 'Amount On Spot Paid Vet'}
             fullWidth
             type='number'
             variant='outlined'
-            value={vetPaymentEditValues.amountPaidVetSpot}
-            onChange={e => setVetPaymentEditValues(prev => ({ ...prev, amountPaidVetSpot: e.target.value }))}
+            value={vetPaymentEditValues.amountPaidSpot}
+            onChange={e => setVetPaymentEditValues(prev => ({ ...prev, amountPaidSpot: e.target.value }))}
             sx={{ mt: 2 }}
           />
         </DialogContent>
@@ -684,11 +807,11 @@ const InHouseAppointmentPage = () => {
           <Button onClick={handleCloseVetPaymentEditModal} color='secondary'>
             Cancel
           </Button>
-          <Button onClick={handleUpdateAmountPaidVetModal} variant='contained' color='primary'>
-            Update Amount Paid Vet
+          <Button onClick={handleUpdateAmountPaidModal} variant='contained' color='primary'>
+            Update Amount Paid
           </Button>
-          <Button onClick={handleUpdateAmountVetSpotModal} variant='contained' color='primary'>
-            Update Amount On Spot Paid Vet
+          <Button onClick={handleUpdateAmountSpotModal} variant='contained' color='primary'>
+            Update Amount On Spot
           </Button>
         </DialogActions>
       </Dialog>

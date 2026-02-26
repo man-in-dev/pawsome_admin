@@ -526,14 +526,14 @@ const VetManagementPage = () => {
       <ToastContainer />
       <Box>
         <CardHeader
-          avatar={<Person2 color='primary' fontSize='large' />} // Icon before title
-          title='Vet managemnt'
+          avatar={<Person2 color='primary' fontSize='large' />}
+          title='Vet Management'
           titleTypographyProps={{
-            variant: 'h5', // Set the text size
-            color: 'textPrimary', // Optional: Change text color
-            fontWeight: 'bold' // Optional: Make it bold
+            variant: 'h5',
+            color: 'textPrimary',
+            fontWeight: 'bold'
           }}
-          subheader={'Create or Edit Vet Profile'}
+          subheader='Create or Edit Vet Profile'
         />
       </Box>
       <Box sx={{ display: 'flex', justifyContent: 'end' }}>

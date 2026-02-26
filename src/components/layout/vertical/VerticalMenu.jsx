@@ -42,7 +42,8 @@ import {
   ManageHistorySharp,
   TempleBuddhist,
   Report,
-  BrandingWatermark
+  BrandingWatermark,
+  ContentCut
 } from '@mui/icons-material'
 
 // Third-party Imports
@@ -85,7 +86,50 @@ const VerticalMenu = ({ scrollMenu }) => {
 
   useEffect(() => {
     const savedPermissions = JSON.parse(localStorage.getItem('permissions')) || []
-    setPermissions(savedPermissions)
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+    const isSuperAdmin = storedUser?.role === 'superadmin'
+
+    // Ensure Groom Profile and Grooming appear after Vet Profile
+    const enhancedPermissions = []
+    if (Array.isArray(savedPermissions)) {
+      savedPermissions.forEach(perm => {
+        enhancedPermissions.push(perm)
+        if (perm === 'vet') {
+          if (!savedPermissions.includes('Groom Profile')) {
+            enhancedPermissions.push('Groom Profile')
+          }
+          if (!savedPermissions.includes('Grooming')) {
+            enhancedPermissions.push('Grooming')
+          }
+        }
+        if (perm === 'hospital') {
+          if (!savedPermissions.includes('Boarding Centers')) {
+            enhancedPermissions.push('Boarding Centers')
+          }
+          if (!savedPermissions.includes('Boarding Caretakers')) {
+            enhancedPermissions.push('Boarding Caretakers')
+          }
+        }
+      })
+    }
+
+    // Handle superadmin if not already added
+    if (isSuperAdmin) {
+      if (!enhancedPermissions.includes('Groom Profile')) {
+        enhancedPermissions.push('Groom Profile')
+      }
+      if (!enhancedPermissions.includes('Grooming')) {
+        enhancedPermissions.push('Grooming')
+      }
+      if (!enhancedPermissions.includes('Boarding Centers')) {
+        enhancedPermissions.push('Boarding Centers')
+      }
+      if (!enhancedPermissions.includes('Boarding Caretakers')) {
+        enhancedPermissions.push('Boarding Caretakers')
+      }
+    }
+
+    setPermissions(Array.from(new Set(enhancedPermissions)))
   }, [])
 
   // Map permissions to menu items
@@ -149,14 +193,19 @@ const VerticalMenu = ({ scrollMenu }) => {
     banner: { href: '/banner', icon: <Wallpaper />, label: 'Banner' },
     hospital: { href: '/hospital', icon: <LocalHospital />, label: 'Hospital Profile' },
     vet: { href: '/vet', icon: <MedicalServices />, label: ' Vets Profile' },
+    'Groom Profile': { href: '/grooming', icon: <MedicalServices />, label: 'Groom Profile' },
+    'Boarding Centers': { href: '/boarding-facility', icon: <OtherHouses />, label: 'Boarding Centers' },
+    'Boarding Caretakers': { href: '/boarding-caretaker', icon: <Groups />, label: 'Boarding Caretakers' },
+
     'Payments Management': { href: '/subcategory', icon: <Create />, label: 'Payments Management' },
     Appointments: {
       icon: <Create />,
       label: 'Appointments',
       children: [
-        { href: '/appointments/clinic', label: 'Clinic', icon: <OtherHouses /> },
+        { href: '/appointments/clinic', label: 'Clinic & Groom', icon: <OtherHouses /> },
+        { href: '/appointments/boarding', label: 'Boarding', icon: <OtherHouses /> },
         { href: '/appointments/house', label: 'In-house', icon: <House /> },
-        { href: '/package', icon: <Collections />, label: 'Package' }
+        { href: '/package', icon: <Collections />, label: 'Package' },
       ]
     },
     reports: { href: '/reportuser', label: 'Reports', icon: <Report /> }
@@ -166,13 +215,13 @@ const VerticalMenu = ({ scrollMenu }) => {
     <ScrollWrapper
       {...(isBreakpointReached
         ? {
-            className: 'bs-full overflow-y-auto overflow-x-hidden',
-            onScroll: container => scrollMenu(container, false)
-          }
+          className: 'bs-full overflow-y-auto overflow-x-hidden',
+          onScroll: container => scrollMenu(container, false)
+        }
         : {
-            options: { wheelPropagation: false, suppressScrollX: true },
-            onScrollY: container => scrollMenu(container, true)
-          })}
+          options: { wheelPropagation: false, suppressScrollX: true },
+          onScrollY: container => scrollMenu(container, true)
+        })}
     >
       <Menu
         popoutMenuOffset={{ mainAxis: 23 }}

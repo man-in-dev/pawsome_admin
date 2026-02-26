@@ -1,20 +1,21 @@
 import axios from 'axios'
+import { getApiUrl } from './apiConfig'
 
+export default (port, service, endpoint, method, data, isMultipart) => {
+  // Use localhost for development, production URL for production
+  const apiUrl = getApiUrl(port, service)
+  const fullUrl = `${apiUrl}/${endpoint}`
 
-export default (port, service, endpoint, method, data, isMultipart) =>
-  axios({
-    url: `https://api.pawsomeindia.com/${service}/api/v1/${endpoint}`,
-    // url: `https://pawsome.applore.in/${service}/api/v1/${endpoint}`,
-    // url: `http://localhost:${port}/${service}/api/v1/${endpoint}`,
+  const isGetMethod = method?.toUpperCase() === 'GET'
+
+  return axios({
+    url: fullUrl,
     method,
-    data,
+    // For GET requests, send data as query params; for others, send as body
+    ...(isGetMethod ? { params: data } : { data }),
     headers: {
       'Content-Type': isMultipart ? 'multipart/form-data' : 'application/json',
       Authorization: `Bearer ${localStorage.getItem('token')}`
     }
   })
-
-//https://b60c-103-117-14-244.ngrok-free.app
-//url: `http://localhost:2008/subscription/api/v1/${endpoint}`
-//  url: `https://pawsome.applore.in/${service}/api/v1/${endpoint}`,
-// url: `http://localhost:${port}/${service}/api/v1/${endpoint}`,
+}

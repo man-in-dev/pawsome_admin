@@ -9,51 +9,32 @@ import {
   Typography,
   TextField,
   Button,
-  Slider,
-  Select,
-  MenuItem,
-  Checkbox,
-  ListItemText,
-  InputLabel,
-  FormControl,
-  FormControlLabel,
-  Switch,
   Box,
   Chip,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Avatar,
-  Popper
+  FormControlLabel,
+  Switch
 } from '@mui/material'
 
 import DeleteIcon from '@mui/icons-material/Delete'
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos'
-
-import Autocomplete from '@mui/material/Autocomplete'
-
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos'
 
 import {
-  getAllVets,
-  getAllHospital,
-  deleteClinic,
-  createHospital,
-  editHospital,
-  uploadImage,
-  getAllMatches,
+  createGroomingStore,
+  editGroomingStore,
+  uploadImage
 } from '@/app/api'
 
 import CustomDatePicker from '../../utils/DatePicker'
 
-const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, initialData, onClose = {} }) => {
+const GroomingStoreProfileForm = ({ fetchStore, onSubmit, initialData, onClose = {} }) => {
   const [mediaUrls, setMediaUrls] = useState([])
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [fromTime, setFromTime] = useState('')
   const [toTime, setToTime] = useState('')
 
-  const [hospitalData, setHospitalData] = useState({
+  const [storeData, setStoreData] = useState({
     id: '',
     name: '',
     speciality: '',
@@ -63,11 +44,10 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
     timing: '',
     rating: 3,
     fees: 0,
-    vetIds: [],
     silverFees: '',
     goldFees: '',
     regularFees: '',
-
+    status: true,
     ...initialData
   })
 
@@ -81,8 +61,7 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
     goldFees: '',
     regularFees: '',
     images: '',
-    coordinates: '',
-    vetIds: ''
+    coordinates: ''
   })
 
   const timeStringToDate = timeString => {
@@ -92,20 +71,6 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
     date.setHours(period === 'PM' ? hours + 12 : hours, minutes, 0, 0)
     return date
   }
-
-  // useEffect(() => {
-  //   if (initialData.timing) {
-  //     const [from, to] = initialData?.timing?.split(' - ')
-  //     const fromTimeComponents = parseTime(from || '')
-  //     const toTimeComponents = parseTime(to || '')
-
-  //     console.log('From Time:', fromTimeComponents) // { hours: '3', minutes: '09', period: 'AM' }
-  //     console.log('To Time:', toTimeComponents) // { hours: '7', minutes: '12', period: 'AM' }
-
-  //     setFromTime(from || '')
-  //     setToTime(to || '')
-  //   }
-  // }, [initialData])
 
   useEffect(() => {
     if (initialData.timing) {
@@ -117,31 +82,14 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
 
   useEffect(() => {
     if (initialData) {
-      setHospitalData(prevData => ({
+      setStoreData(prevData => ({
         ...prevData,
         ...initialData,
         images: initialData.images || []
       }))
-
-      // if (initialData?.timing) {
-      //   const [from, to] = initialData.timing.split(' - ')
-      //   setFromTime(from || '')
-      //   setToTime(to || '')
-      // }
-
       setMediaUrls(initialData.images || [])
     }
   }, [initialData])
-
-  useEffect(() => {
-    if (initialData?.Vets) {
-      setHospitalData(prevData => ({
-        ...prevData,
-        vetIds: initialData.Vets.map(vet => vet.id)
-      }))
-    }
-  }, [initialData])
-
 
   const handleImageUpload = async e => {
     const files = Array.from(e.target.files)
@@ -183,13 +131,13 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
 
   const handleInputChange = async e => {
     const { name, value } = e.target
-    setHospitalData(prevData => ({ ...prevData, [name]: value }))
+    setStoreData(prevData => ({ ...prevData, [name]: value }))
     setErrors(prev => ({ ...prev, [name]: '' }))
 
     if (name === 'address') {
       const coordinates = await fetchCoordinates(value)
       if (coordinates) {
-        setHospitalData(prevData => ({ ...prevData, coordinates }))
+        setStoreData(prevData => ({ ...prevData, coordinates }))
       }
     }
   }
@@ -211,25 +159,17 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
     }
   }
 
-  const handleVetSelection = event => {
-    const { value } = event.target
-    setHospitalData(prevData => ({
-      ...prevData,
-      vetIds: value
-    }))
-  }
-
   const handleCoordinatesChange = (index, value) => {
-    const newCoordinates = [...hospitalData.coordinates]
+    const newCoordinates = [...storeData.coordinates]
     newCoordinates[index] = parseFloat(value)
-    setHospitalData(prevData => ({ ...prevData, coordinates: newCoordinates }))
+    setStoreData(prevData => ({ ...prevData, coordinates: newCoordinates }))
   }
+  
   const formatTime = date => {
     if (!date) return ''
     let hours = date.getHours()
     const minutes = date.getMinutes()
     const period = hours >= 12 ? 'PM' : 'AM'
-    // Convert to 12-hour format and handle midnight (0 becomes 12)
     hours = hours % 12 || 12
     const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes
     return `${hours}:${formattedMinutes} ${period}`
@@ -237,34 +177,29 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
 
   const validate = () => {
     const tempErrors = {}
-    if (!hospitalData.name.trim()) tempErrors.name = 'Hospital Name is required'
-    if (!hospitalData.speciality.trim()) tempErrors.speciality = 'Speciality is required'
-    if (!hospitalData.address.trim()) tempErrors.address = 'Address is required'
+    if (!storeData.name.trim()) tempErrors.name = 'Store Name is required'
+    if (!storeData.speciality.trim()) tempErrors.speciality = 'Speciality is required'
+    if (!storeData.address.trim()) tempErrors.address = 'Address is required'
     if (!initialData?.id && (!fromTime || !toTime)) {
       tempErrors.timing = 'Both opening and closing times are required'
     } else if (fromTime >= toTime) {
       tempErrors.timing = 'Opening time must be before closing time'
     }
-    if ( !initialData?.id && !mediaUrls.length) tempErrors.images = 'At least one image is required'
-    if (hospitalData.coordinates.length !== 2 || hospitalData.coordinates.some(c => isNaN(c)))
+    if (!initialData?.id && !mediaUrls.length) tempErrors.images = 'At least one image is required'
+    if (storeData.coordinates.length !== 2 || storeData.coordinates.some(c => isNaN(c)))
       tempErrors.coordinates = 'Valid latitude and longitude are required'
-    if (hospitalData.fees === '' || isNaN(hospitalData.fees) || Number(hospitalData.fees) < 0)
+    if (storeData.fees === '' || isNaN(storeData.fees) || Number(storeData.fees) < 0)
       tempErrors.fees = 'Valid consultation fees are required'
-    if (hospitalData.silverFees === '' || isNaN(hospitalData.silverFees) || Number(hospitalData.silverFees) < 0)
+    if (storeData.silverFees === '' || isNaN(storeData.silverFees) || Number(storeData.silverFees) < 0)
       tempErrors.silverFees = 'Valid silver fees are required'
-    if (hospitalData.goldFees === '' || isNaN(hospitalData.goldFees) || Number(hospitalData.goldFees) < 0)
+    if (storeData.goldFees === '' || isNaN(storeData.goldFees) || Number(storeData.goldFees) < 0)
       tempErrors.goldFees = 'Valid gold fees are required'
-    if (hospitalData.regularFees === '' || isNaN(hospitalData.regularFees) || Number(hospitalData.regularFees) < 0)
+    if (storeData.regularFees === '' || isNaN(storeData.regularFees) || Number(storeData.regularFees) < 0)
       tempErrors.regularFees = 'Valid regular fees are required'
-    if (!initialData?.id && (!hospitalData.vetIds || hospitalData.vetIds.length === 0))
-      tempErrors.vetIds = 'At least one vet must be assigned'
 
     setErrors(tempErrors)
     return Object.keys(tempErrors).length === 0
   }
-
-  console.log('errors', errors)
-
 
   const handleSubmit = async () => {
     if (!validate()) {
@@ -274,18 +209,17 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
 
     try {
       const payload = {
-        name: hospitalData.name?.trim(),
-        speciality: hospitalData.speciality,
-        // timing: hospitalData.timing ? String(hospitalData.timing) : '',
+        name: storeData.name?.trim(),
+        speciality: storeData.speciality,
         timing: `${formatTime(fromTime)} - ${formatTime(toTime)}`,
         images: mediaUrls,
-        coordinates: hospitalData.coordinates.length === 2 ? hospitalData.coordinates : [],
-        address: hospitalData.address?.trim(),
-        goldFees: hospitalData.goldFees !== '' ? Number(hospitalData.goldFees) : 0,
-        silverFees: hospitalData.silverFees !== '' ? Number(hospitalData.silverFees) : 0,
-        regularFees: hospitalData.regularFees !== '' ? Number(hospitalData.regularFees) : 0,
-        fees: hospitalData.fees !== '' ? Number(hospitalData.fees) : 0,
-        ...(initialData?.id && { vetIds: hospitalData.vetIds })
+        coordinates: storeData.coordinates.length === 2 ? storeData.coordinates : [],
+        address: storeData.address?.trim(),
+        goldFees: storeData.goldFees !== '' ? Number(storeData.goldFees) : 0,
+        silverFees: storeData.silverFees !== '' ? Number(storeData.silverFees) : 0,
+        regularFees: storeData.regularFees !== '' ? Number(storeData.regularFees) : 0,
+        fees: storeData.fees !== '' ? Number(storeData.fees) : 0,
+        status: storeData.status
       }
 
       if (
@@ -303,44 +237,28 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
       }
 
       if (initialData?.id) {
-        const response = await editHospital(initialData.id, payload)
+        const response = await editGroomingStore(initialData.id, payload)
         if (response.status === 200) {
-          // await getAllHospital()
-          await fetchHospital
-          // await getAllVets()
-          toast.success('Hospital edited successfully', {
+          await fetchStore()
+          toast.success('Grooming store edited successfully', {
             autoClose: 9000
           })
         }
       } else {
-        const response = await createHospital(payload)
+        const response = await createGroomingStore(payload)
         if (response.status === 200) {
-          await fetchHospital
-          // fetchvets()
-          toast.success('Hospital created successfully', {
+          await fetchStore()
+          toast.success('Grooming store created successfully', {
             autoClose: 9000
           })
         }
       }
 
-      onSubmit(hospitalData)
+      onSubmit(storeData)
       onClose()
     } catch (error) {
-      toast.error('Error saving hospital: ' + error.message)
+      toast.error('Error saving grooming store: ' + error.message)
     }
-  }
-
-  const handleTimeChange = (field, time) => {
-    console.log('tt', time)
-    const timmings = {
-      fromTime: time,
-      toTime: time
-    }
-    setHospitalData(prevData => {
-      const updatedData = { ...prevData, [field]: timmings }
-
-      return updatedData
-    })
   }
 
   return (
@@ -348,8 +266,8 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
       <ToastContainer />
       <TextField
         name='name'
-        label='Hospital Name'
-        value={hospitalData.name}
+        label='Store Name'
+        value={storeData.name}
         fullWidth
         margin='normal'
         onChange={handleInputChange}
@@ -359,7 +277,7 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
       <TextField
         name='speciality'
         label='Speciality'
-        value={hospitalData.speciality}
+        value={storeData.speciality}
         fullWidth
         margin='normal'
         onChange={handleInputChange}
@@ -374,7 +292,9 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
         multiline
         rows={3}
         onChange={handleInputChange}
-        value={hospitalData.address}
+        value={storeData.address}
+        error={!!errors.address}
+        helperText={errors.address}
       />
       {/* Opening & Closing Times */}
       <Typography variant='h6' gutterBottom>
@@ -402,6 +322,11 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
           dateFormat='h:mm aa'
         />
       </Box>
+      {errors.timing && (
+        <Typography variant='caption' color='error' sx={{ ml: 2 }}>
+          {errors.timing}
+        </Typography>
+      )}
 
       <TextField
         type='number'
@@ -410,7 +335,7 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
         fullWidth
         margin='normal'
         onChange={handleInputChange}
-        value={hospitalData.fees || ''}
+        value={storeData.fees || ''}
         error={!!errors.fees}
         helperText={errors.fees}
       />
@@ -421,7 +346,7 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
         fullWidth
         margin='normal'
         onChange={handleInputChange}
-        value={hospitalData.silverFees || ''}
+        value={storeData.silverFees || ''}
         error={!!errors.silverFees}
         helperText={errors.silverFees}
       />
@@ -432,18 +357,18 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
         fullWidth
         margin='normal'
         onChange={handleInputChange}
-        value={hospitalData.goldFees || ''}
+        value={storeData.goldFees || ''}
         error={!!errors.goldFees}
         helperText={errors.goldFees}
       />
       <TextField
-        type='regularFees'
+        type='number'
         name='regularFees'
         label='Regular Fees'
         fullWidth
         margin='normal'
         onChange={handleInputChange}
-        value={hospitalData.regularFees || ''}
+        value={storeData.regularFees || ''}
         error={!!errors.regularFees}
         helperText={errors.regularFees}
       />
@@ -455,8 +380,9 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
           label='Latitude'
           fullWidth
           margin='normal'
-          value={hospitalData.coordinates[0] || ''}
+          value={storeData.coordinates[0] || ''}
           onChange={e => handleCoordinatesChange(0, e.target.value)}
+          error={!!errors.coordinates}
         />
         <TextField
           type='number'
@@ -464,49 +390,22 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
           label='Longitude'
           fullWidth
           margin='normal'
-          value={hospitalData.coordinates[1] || ''}
+          value={storeData.coordinates[1] || ''}
           onChange={e => handleCoordinatesChange(1, e.target.value)}
+          error={!!errors.coordinates}
         />
       </Box>
-      <Box display='flex' flexDirection='column' gap={1} marginTop={2}>
-        {initialData.id && (
-          <>
-            <Typography variant='h6'>Assign Vets</Typography>
-            <FormControl fullWidth margin='normal'>
-              <Autocomplete
-                multiple
-                id='assign-vets'
-                options={vetsList || []}
-                getOptionLabel={option => option.name}
-                // Map the selected vet IDs into vet objects; if none found, fallback to empty object.
-                value={vetsList?.filter(vet => hospitalData?.vetIds?.includes(vet.id))}
-                onChange={(event, newValue) => {
-                  // Update your state with the vet IDs from newValue
-                  setHospitalData(prev => ({ ...prev, vetIds: newValue.map(v => v.id) }))
-                }}
-                renderInput={params => <TextField {...params} placeholder='Search vets' />}
-                renderOption={(props, option) => (
-                  <li {...props}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Avatar src={option.profilePicture} alt={option.name} sx={{ width: 24, height: 24, mr: 1 }}>
-                        {option.name.charAt(0)}
-                      </Avatar>
-                      {option.name}
-                    </Box>
-                  </li>
-                )}
-              />
-            </FormControl>
-          </>
-        )}
-      </Box>
-
+      {errors.coordinates && (
+        <Typography variant='caption' color='error' sx={{ ml: 2, mb: 2 }}>
+          {errors.coordinates}
+        </Typography>
+      )}
 
       <FormControlLabel
         control={
           <Switch
-            checked={hospitalData.status}
-            onChange={e => setHospitalData({ ...hospitalData, status: e.target.checked })}
+            checked={storeData.status}
+            onChange={e => setStoreData({ ...storeData, status: e.target.checked })}
           />
         }
         label='Status'
@@ -580,11 +479,11 @@ const HospitalProfileForm = ({ fetchHospital, fetchvets, vetsList, onSubmit, ini
           <input type='file' multiple hidden onChange={handleImageUpload} />
         </Button>
         <Button variant='contained' color='secondary' sx={{ marginTop: 2 }} onClick={handleSubmit}>
-          Save Hospital
+          Save Store
         </Button>
       </Box>
     </form>
   )
 }
 
-export default HospitalProfileForm
+export default GroomingStoreProfileForm
