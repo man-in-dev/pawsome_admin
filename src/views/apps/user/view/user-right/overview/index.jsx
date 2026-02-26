@@ -20,7 +20,7 @@ import { getAllUser } from '@/app/api'
 //   return res.json()
 // }
 
-const OverViewTab = async () => {
+const OverViewTab = () => {
   // Vars
   // const invoiceData =  getData()
 

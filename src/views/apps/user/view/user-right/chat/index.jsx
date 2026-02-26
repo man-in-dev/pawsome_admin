@@ -1,23 +1,17 @@
+'use client'
 
 import Grid from '@mui/material/Grid'
 
-import ChatPage from './ChatPage';
+import ChatPage from './ChatPage'
 
-
-const ChatDetails = async () => {
-    // Vars
-    // const invoiceData =  getData()
-  
-    return (
-      <Grid container spacing={6}>
-        <Grid item xs={12}>
-        <ChatPage/>
-        
-        </Grid>
-    
-    
+const ChatDetails = () => {
+  return (
+    <Grid container spacing={6}>
+      <Grid item xs={12}>
+        <ChatPage />
       </Grid>
-    )
-  }
-  
-  export default ChatDetails
+    </Grid>
+  )
+}
+
+export default ChatDetails
