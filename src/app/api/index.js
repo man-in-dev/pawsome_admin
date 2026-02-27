@@ -32,7 +32,7 @@ export const updateAppointment = (id, data) =>
 export const createMenbershipPlan = data => axios('2008', 'subscription', 'admin/createsubscription', 'POST', data)
 export const getAllPlans = data => axios('2008', 'subscription', 'admin/getAllPlans', 'GET')
 export const editPlan = data => axios('2008', 'subscription', 'admin/editplan', 'PUT', data)
-export const deletePlan = data => axios('2008', 'subscription', '/admin/deletePlan', 'DELETE', data)
+export const deletePlan = data => axios('2008', 'subscription', 'admin/deletePlan', 'DELETE', data)
 
 // api for accounts
 export const getAllPermission = data => axios('2001', 'authentication', 'admin/fetchAllPermissions', 'GET')
@@ -96,7 +96,7 @@ export const updateTermsandCondiotion = data => axios('2009', 'settings', 'setti
 // api for hospital managment
 export const createHospital = data => axios('2003', 'veterinary', 'admin/clinic', 'POST', data)
 export const getAllHospital = data => axios('2003', 'veterinary', 'admin/clinic', 'GET', data)
-export const uploadImage = data => axios('2000', 'document', '/file/upload', 'POST', data, true)
+export const uploadImage = data => axios('2000', 'document', 'file/upload', 'POST', data, true)
 export const editHospital = (id, data) => axios('2003', 'veterinary', `admin/clinic/${id}`, 'PUT', data)
 export const deleteClinic = id => axios('2003', 'veterinary', `admin/clinic/delete/${id}`, 'DELETE')
 

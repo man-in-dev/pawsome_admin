@@ -4,7 +4,7 @@ import { getApiUrl } from './apiConfig'
 export default (port, service, endpoint, method, data, isMultipart) => {
   // Use localhost for development, production URL for production
   const apiUrl = getApiUrl(port, service)
-  const fullUrl = `${apiUrl}/${endpoint}`
+  const fullUrl = `${apiUrl.replace(/\/+$/, '')}/${String(endpoint || '').replace(/^\/+/, '')}`
 
   const isGetMethod = method?.toUpperCase() === 'GET'
 
