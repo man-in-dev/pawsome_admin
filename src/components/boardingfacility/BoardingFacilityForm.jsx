@@ -151,7 +151,6 @@ const BoardingFacilityForm = ({ fetchFacilities, onSubmit, initialData, onClose 
         if (!facilityData.name.trim()) tempErrors.name = 'Facility Name is required'
         if (!facilityData.address.trim()) tempErrors.address = 'Address is required'
         if (!facilityData.city.trim()) tempErrors.city = 'City is required'
-        if (!mediaUrls.length) tempErrors.images = 'At least one image is required'
         if (isNaN(facilityData.regularFees) || facilityData.regularFees < 0) tempErrors.regularFees = 'Invalid fee'
         if (isNaN(facilityData.goldFees) || facilityData.goldFees < 0) tempErrors.goldFees = 'Invalid fee'
 
