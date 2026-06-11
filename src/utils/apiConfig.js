@@ -24,7 +24,7 @@ const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' ||
   !process.env.NEXT_PUBLIC_ENV // Default to development if not set
 
 // Base URL configuration
-const BASE_URL = 'https://api.pawsomeindia.com'  // Production
+const BASE_URL = 'https://api.pawsome.co.in'  // Production
 
 
   //  IS_DEVELOPMENT
